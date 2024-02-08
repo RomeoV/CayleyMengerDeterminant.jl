@@ -1,8 +1,7 @@
 module CayleyMengerDeterminant
 using Base: OneTo
 using LinearAlgebra
-import ArrayInterface
-import Static: StaticInt, SOneTo
+import Static: StaticInt
 using StaticArrays
 import StaticArrays: Dynamic
 import InverseFunctions
@@ -87,7 +86,7 @@ When providing `simplex_dimensions` and `square_distances` directly, `simplex_di
 `N` of the `N-simplex, and `square_distances` must be the precomputed backing linear storage of the square distances among the
 points of the `N`-simplex and so must have length `binomial2(simplex_dimensions + 1)`.
 """
-struct CayleyMengerDistanceMatrix{T<:Real,Sz} <: ArrayInterface.AbstractArray2{T,2}
+struct CayleyMengerDistanceMatrix{T<:Real,Sz} <: ArrayInterface.AbstractArray{T,2}
     "The number of dimensions `N` of the `N`-simplex whose points are being calculated with."
     simplex_dimensions::Int
 
@@ -208,69 +207,7 @@ LinearAlgebra.ishermitian(::CayleyMengerDistanceMatrix) = true
     N, N
 end
 
-### ArrayInterface integration
 
-ArrayInterface.can_change_size(::Type{<:CayleyMengerDistanceMatrix}) = false
-
-ArrayInterface.can_setindex(::Type{<:CayleyMengerDistanceMatrix}) = false
-
-ArrayInterface.has_sparsestruct(::CayleyMengerDistanceMatrix) = true
-
-ArrayInterface.ismutable(::CayleyMengerDistanceMatrix) = false
-
-ArrayInterface.isstructured(::CayleyMengerDistanceMatrix) = true
-
-ArrayInterface.known_first(::CayleyMengerDistanceMatrix{T}) where {T<:Real} = zero(T)
-
-ArrayInterface.known_last(::CayleyMengerDistanceMatrix{T}) where {T<:Real} = zero(T)
-
-ArrayInterface.parent(A::CayleyMengerDistanceMatrix{T}) where {T<:Real} =
-    convert.(T, A.square_distances)
-
-function ArrayInterface.findstructralnz(A::CayleyMengerDistanceMatrix{T}) where {T<:Real}
-    n = A.simplex_dimensions + 1
-    v = n * n - n
-    I = 1:n
-    J = Vector{Int}(undef, n)
-    k = 0
-    for i = 1:n
-        for j = 1:(i-1)
-            k += 1
-            J[k] = j
-        end
-    end
-    I, J
-end
-
-ArrayInterface.getindex(A::CayleyMengerDistanceMatrix, i::Int, j::Int) = A[i, j]
-
-ArrayInterface.unsafe_getindex(A::CayleyMengerDistanceMatrix, i::Int, j::Int) = A[i, j]
-
-ArrayInterface.size(::CayleyMengerDistanceMatrix{T,N}) where {T<:Real,N} =
-    (StaticInt(N + 2), StaticInt(N + 2))
-
-ArrayInterface.size(A::CayleyMengerDistanceMatrix{T,Dynamic}) where {T<:Real} =
-    (A.simplex_dimensions + 2, A.simplex_dimensions + 2)
-
-ArrayInterface.axes_types(::Type{CayleyMengerDistanceMatrix{T,N}}) where {T<:Real,N} =
-    NTuple{2,SOneTo{N + 2}}
-
-ArrayInterface.axes_types(::Type{CayleyMengerDistanceMatrix{T,Dynamic}}) where {T<:Real} =
-    NTuple{2,OneTo{Int}}
-
-ArrayInterface.axes(::CayleyMengerDistanceMatrix{T,N}) where {T<:Real,N} =
-    (SOneTo{N + 2}(), SOneTo{N + 2}())
-
-ArrayInterface.axes(A::CayleyMengerDistanceMatrix{T,Dynamic}) where {T<:Real} =
-    (OneTo(A.simplex_dimensions + 2), OneTo(A.simplex_dimensions + 2))
-
-ArrayInterface.axes(::CayleyMengerDistanceMatrix{T,N}, i) where {T<:Real,N} =
-    (SOneTo{N + 2}(), SOneTo{N + 2}())
-
-ArrayInterface.axes(
-    A::CayleyMengerDistanceMatrix{T,Dynamic},
-    i::Union{Int,StaticInt},
-) where {T<:Real} = OneTo(A.simplex_dimensions + 2)
 
 # the operation
 
